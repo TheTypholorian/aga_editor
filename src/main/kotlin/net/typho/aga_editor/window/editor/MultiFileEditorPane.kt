@@ -1,11 +1,12 @@
 package net.typho.aga_editor.window.editor
 
+import net.typho.aga_editor.window.editor.styling.Styling
 import java.nio.file.Path
 import javax.swing.JTabbedPane
 import kotlin.io.path.name
 
 open class MultiFileEditorPane : JTabbedPane() {
-    fun open(file: Path): FileTextPane {
+    fun open(file: Path, styling: Styling? = null): FileTextPane {
         repeat(tabCount) { i ->
             val tab = getTabComponentAt(i)
 
@@ -15,8 +16,8 @@ open class MultiFileEditorPane : JTabbedPane() {
             }
         }
 
-        return FileTextPane(file).also {
-            addTab(file.name, FileTextPane(file))
+        return FileTextPane(file, styling).also {
+            addTab(file.name, it)
         }
     }
 }

@@ -2,6 +2,7 @@ package net.typho.aga_editor
 
 import com.formdev.flatlaf.FlatDarkLaf
 import net.typho.aga_editor.window.editor.MultiFileEditorPane
+import net.typho.aga_editor.window.editor.styling.KotlinStyling
 import java.awt.Dimension
 import javax.imageio.ImageIO
 import javax.swing.JFrame
@@ -33,7 +34,7 @@ object AgaEditor {
         val sandbox = Path("sandbox")
         val editor = MultiFileEditorPane()
         editor.open(sandbox.resolve("test.txt"))
-        editor.open(sandbox.resolve("KotlinClass.kt"))
+        editor.open(sandbox.resolve("KotlinClass.kt"), KotlinStyling)
         window.contentPane.add(editor)
 
         window.isVisible = true

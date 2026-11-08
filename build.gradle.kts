@@ -11,6 +11,7 @@ repositories {
 
 dependencies {
     implementation("com.formdev:flatlaf:3.8")
+    implementation(kotlin("compiler"))
 }
 
 kotlin {
