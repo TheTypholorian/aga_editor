@@ -4,6 +4,8 @@ import com.formdev.flatlaf.FlatDarkLaf
 import net.typho.aga_editor.window.editor.MultiFileEditorPane
 import net.typho.aga_editor.window.editor.styling.KotlinStyling
 import java.awt.Dimension
+import java.awt.event.MouseEvent
+import java.awt.event.MouseMotionListener
 import javax.imageio.ImageIO
 import javax.swing.JFrame
 import javax.swing.UIManager
