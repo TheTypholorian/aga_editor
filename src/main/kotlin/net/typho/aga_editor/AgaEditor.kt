@@ -1,12 +1,13 @@
 package net.typho.aga_editor
 
 import com.formdev.flatlaf.FlatDarkLaf
+import com.formdev.flatlaf.util.SystemFileChooser
 import net.typho.aga_editor.window.editor.MultiFileEditorPane
 import net.typho.aga_editor.window.editor.styling.KotlinCompilerStyling
 import java.awt.Dimension
+import java.awt.event.ActionEvent
 import javax.imageio.ImageIO
-import javax.swing.JFrame
-import javax.swing.UIManager
+import javax.swing.*
 import kotlin.io.path.Path
 
 object AgaEditor {
@@ -36,6 +37,21 @@ object AgaEditor {
         //editor.open(sandbox.resolve("test.txt"))
         editor.open(sandbox.resolve("KotlinClass.kt"), KotlinCompilerStyling)
         window.contentPane.add(editor)
+
+        val menuBar = JMenuBar()
+        menuBar.add(JMenu("File").also { menu ->
+            menu.add(JMenuItem(object : AbstractAction("Open") {
+                override fun actionPerformed(e: ActionEvent) {
+                    val chooser = SystemFileChooser()
+                    val result = chooser.showOpenDialog(menu)
+
+                    if (result == SystemFileChooser.APPROVE_OPTION) {
+                        editor.open(chooser.selectedFile.toPath())
+                    }
+                }
+            }))
+        })
+        window.jMenuBar = menuBar
 
         window.isVisible = true
         window.toFront()
