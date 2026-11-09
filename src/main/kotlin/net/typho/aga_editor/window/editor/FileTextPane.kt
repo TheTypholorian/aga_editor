@@ -87,20 +87,28 @@ open class FileTextPane(
                 super.replace(fb, offset, length, text, attrs)
 
                 if (length == 0 && text != null && text.length == 1) {
-                    val other = when (text[0]) {
-                        '(' -> ')'
-                        '{' -> '}'
-                        '[' -> ']'
-                        '<' -> '>'
-                        '"' -> '"'
-                        '\'' -> '\''
-                        else -> null
-                    }
+                    if (text[0] == '\n') {
+                        val fullText = fb.document.getText(0, offset)
+                        val lineIndex = fullText.substringAfterLast('\n')
+                        val indentIndex = lineIndex.indexOfFirst { !it.isWhitespace() }
+                        val indent = if (indentIndex == -1) lineIndex else lineIndex.substring(0, indentIndex)
+                        fb.insertString(offset + 1, indent, null)
+                    } else {
+                        val other = when (text[0]) {
+                            '(' -> ')'
+                            '{' -> '}'
+                            '[' -> ']'
+                            '<' -> '>'
+                            '"' -> '"'
+                            '\'' -> '\''
+                            else -> null
+                        }
 
-                    if (other != null) {
-                        val caret = editor.caretPosition
-                        fb.insertString(caret, other.toString(), null)
-                        editor.caretPosition = caret
+                        if (other != null) {
+                            val caret = editor.caretPosition
+                            fb.insertString(caret, other.toString(), null)
+                            editor.caretPosition = caret
+                        }
                     }
                 }
             }
