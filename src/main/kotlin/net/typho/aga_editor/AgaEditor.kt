@@ -3,7 +3,6 @@ package net.typho.aga_editor
 import com.formdev.flatlaf.FlatDarkLaf
 import com.formdev.flatlaf.util.SystemFileChooser
 import net.typho.aga_editor.window.editor.MultiFileEditorPane
-import net.typho.aga_editor.window.editor.styling.KotlinCompilerStyling
 import net.typho.aga_editor.window.file_tree.FileTree
 import java.awt.BorderLayout
 import java.awt.Dimension

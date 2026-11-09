@@ -7,25 +7,12 @@ import java.awt.event.ActionEvent
 import java.awt.event.InputEvent
 import java.awt.event.KeyEvent
 import java.nio.file.Path
-import javax.swing.AbstractAction
-import javax.swing.JScrollPane
-import javax.swing.JTabbedPane
-import javax.swing.JTextPane
-import javax.swing.KeyStroke
-import javax.swing.SwingUtilities
+import javax.swing.*
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
-import javax.swing.text.AbstractDocument
-import javax.swing.text.AttributeSet
-import javax.swing.text.DocumentFilter
-import javax.swing.text.SimpleAttributeSet
-import javax.swing.text.StyleConstants
-import kotlin.io.path.createFile
-import kotlin.io.path.createParentDirectories
-import kotlin.io.path.exists
-import kotlin.io.path.name
-import kotlin.io.path.readText
-import kotlin.io.path.writeText
+import javax.swing.text.*
+import javax.swing.undo.UndoManager
+import kotlin.io.path.*
 
 open class FileTextPane(
     file: Path,
@@ -45,6 +32,8 @@ open class FileTextPane(
         '"' to '"',
         '\'' to '\''
     )
+    @JvmField
+    val undoManager = UndoManager()
 
     init {
         if (!file.exists()) {
@@ -57,6 +46,32 @@ open class FileTextPane(
         editor.actionMap.put("save", object : AbstractAction("save") {
             override fun actionPerformed(e: ActionEvent) {
                 save()
+            }
+        })
+
+        editor.document.addUndoableEditListener {
+            val edit = it.edit
+
+            if (edit is AbstractDocument.DefaultDocumentEvent) {
+                if (edit.type == DocumentEvent.EventType.INSERT ||
+                    edit.type == DocumentEvent.EventType.REMOVE
+                ) {
+                    undoManager.addEdit(edit)
+                }
+            }
+        }
+
+        editor.inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.CTRL_DOWN_MASK), "undo")
+        editor.actionMap.put("undo", object : AbstractAction("undo") {
+            override fun actionPerformed(e: ActionEvent) {
+                undo()
+            }
+        })
+        editor.inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Y, InputEvent.CTRL_DOWN_MASK), "redo")
+        editor.inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.CTRL_DOWN_MASK or InputEvent.SHIFT_DOWN_MASK), "redo")
+        editor.actionMap.put("redo", object : AbstractAction("redo") {
+            override fun actionPerformed(e: ActionEvent) {
+                redo()
             }
         })
 
@@ -167,5 +182,17 @@ open class FileTextPane(
 
         file.writeText(editor.text)
         saved = true
+    }
+
+    fun undo() {
+        if (undoManager.canUndo()) {
+            undoManager.undo()
+        }
+    }
+
+    fun redo() {
+        if (undoManager.canRedo()) {
+            undoManager.redo()
+        }
     }
 }
