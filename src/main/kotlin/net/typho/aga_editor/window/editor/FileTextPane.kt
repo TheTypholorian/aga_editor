@@ -15,6 +15,9 @@ import javax.swing.KeyStroke
 import javax.swing.SwingUtilities
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
+import javax.swing.text.AbstractDocument
+import javax.swing.text.AttributeSet
+import javax.swing.text.DocumentFilter
 import javax.swing.text.SimpleAttributeSet
 import javax.swing.text.StyleConstants
 import kotlin.io.path.createFile
@@ -48,6 +51,60 @@ open class FileTextPane(
             }
         })
 
+        (editor.document as AbstractDocument).documentFilter = object : DocumentFilter() {
+            override fun remove(
+                fb: FilterBypass,
+                offset: Int,
+                length: Int
+            ) {
+                if (length == 1) {
+                    val text = fb.document.getText(offset, length)
+                    val other = when (text[0]) {
+                        '(' -> ')'
+                        '{' -> '}'
+                        '[' -> ']'
+                        '<' -> '>'
+                        '"' -> '"'
+                        '\'' -> '\''
+                        else -> null
+                    }
+
+                    if (other != null && fb.document.getText(offset + 1, 1)[0] == other) {
+                        fb.remove(offset + 1, length)
+                    }
+                }
+
+                super.remove(fb, offset, length)
+            }
+
+            override fun replace(
+                fb: FilterBypass,
+                offset: Int,
+                length: Int,
+                text: String?,
+                attrs: AttributeSet?
+            ) {
+                super.replace(fb, offset, length, text, attrs)
+
+                if (length == 0 && text != null && text.length == 1) {
+                    val other = when (text[0]) {
+                        '(' -> ')'
+                        '{' -> '}'
+                        '[' -> ']'
+                        '<' -> '>'
+                        '"' -> '"'
+                        '\'' -> '\''
+                        else -> null
+                    }
+
+                    if (other != null) {
+                        val caret = editor.caretPosition
+                        fb.insertString(caret, other.toString(), null)
+                        editor.caretPosition = caret
+                    }
+                }
+            }
+        }
         editor.styledDocument.addDocumentListener(object : DocumentListener {
             override fun insertUpdate(e: DocumentEvent) {
                 saved = false
