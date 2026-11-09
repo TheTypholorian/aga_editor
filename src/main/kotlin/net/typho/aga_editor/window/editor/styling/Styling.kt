@@ -6,6 +6,13 @@ import javax.swing.text.StyleConstants
 import javax.swing.text.StyledDocument
 
 interface Styling {
+    companion object {
+        @JvmField // TODO
+        val byFileExtension = mutableMapOf<String, Styling>(
+            "kt" to KotlinCompilerStyling
+        )
+    }
+
     fun style(
         color: Color? = null,
         bold: Boolean = false,

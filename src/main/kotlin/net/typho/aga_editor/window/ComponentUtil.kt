@@ -4,7 +4,7 @@ import java.awt.Component
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
-fun <V> Component.property(initial: V, propertyChangedNotif: (String, V, V) -> Unit) = object : ReadWriteProperty<Any?, V> {
+fun <V> Component.property(initial: V, propertyChangedNotif: (name: String, old: V, new: V) -> Unit, listener: (old: V, new: V) -> Unit = { old, new -> }) = object : ReadWriteProperty<Any?, V> {
     var value: V = initial
 
     override fun getValue(thisRef: Any?, property: KProperty<*>): V {
@@ -16,6 +16,8 @@ fun <V> Component.property(initial: V, propertyChangedNotif: (String, V, V) -> U
         this.value = value
 
         if (old != value) {
+            listener(old, value)
+
             propertyChangedNotif(property.name, old, value)
         }
     }

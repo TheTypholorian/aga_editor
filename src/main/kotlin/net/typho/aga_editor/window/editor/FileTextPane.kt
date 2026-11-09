@@ -36,6 +36,15 @@ open class FileTextPane(
     val editor: JTextPane
         get() = viewport.view as JTextPane
     var saved by property(true, ::firePropertyChange)
+    @JvmField
+    val brackets = mutableMapOf(
+        '(' to ')',
+        '{' to '}',
+        '[' to ']',
+        '<' to '>',
+        '"' to '"',
+        '\'' to '\''
+    )
 
     init {
         if (!file.exists()) {
@@ -59,15 +68,7 @@ open class FileTextPane(
             ) {
                 if (length == 1) {
                     val text = fb.document.getText(offset, length)
-                    val other = when (text[0]) {
-                        '(' -> ')'
-                        '{' -> '}'
-                        '[' -> ']'
-                        '<' -> '>'
-                        '"' -> '"'
-                        '\'' -> '\''
-                        else -> null
-                    }
+                    val other = brackets[text[0]]
 
                     if (other != null && fb.document.getText(offset + 1, 1)[0] == other) {
                         fb.remove(offset + 1, length)
@@ -94,15 +95,7 @@ open class FileTextPane(
                         val indent = if (indentIndex == -1) lineIndex else lineIndex.substring(0, indentIndex)
                         fb.insertString(offset + 1, indent, null)
                     } else {
-                        val other = when (text[0]) {
-                            '(' -> ')'
-                            '{' -> '}'
-                            '[' -> ']'
-                            '<' -> '>'
-                            '"' -> '"'
-                            '\'' -> '\''
-                            else -> null
-                        }
+                        val other = brackets[text[0]]
 
                         if (other != null) {
                             val caret = editor.caretPosition

@@ -4,6 +4,8 @@ import com.formdev.flatlaf.FlatDarkLaf
 import com.formdev.flatlaf.util.SystemFileChooser
 import net.typho.aga_editor.window.editor.MultiFileEditorPane
 import net.typho.aga_editor.window.editor.styling.KotlinCompilerStyling
+import net.typho.aga_editor.window.file_tree.FileTree
+import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.event.ActionEvent
 import javax.imageio.ImageIO
@@ -33,10 +35,14 @@ object AgaEditor {
         window.setLocationRelativeTo(null)
 
         val sandbox = Path("sandbox")
+
+        window.contentPane.layout = BorderLayout()
+
         val editor = MultiFileEditorPane()
-        //editor.open(sandbox.resolve("test.txt"))
-        editor.open(sandbox.resolve("KotlinClass.kt"), KotlinCompilerStyling)
-        window.contentPane.add(editor)
+        val files = FileTree(sandbox, editor::open)
+
+        window.contentPane.add(files, BorderLayout.WEST)
+        window.contentPane.add(editor, BorderLayout.CENTER)
 
         val menuBar = JMenuBar()
         menuBar.add(JMenu("File").also { menu ->
