@@ -3,9 +3,6 @@ package net.typho.aga_editor.window.editor.styling
 import com.intellij.openapi.util.Disposer
 import com.intellij.psi.util.elementType
 import org.jetbrains.kotlin.CoreEnvironmentDeprecation
-import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
-import org.jetbrains.kotlin.analysis.api.session.analyze
-import org.jetbrains.kotlin.analysis.api.resolution.resolveSuccessfulSymbol
 import org.jetbrains.kotlin.cli.create
 import org.jetbrains.kotlin.cli.jvm.compiler.EnvironmentConfigFiles
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
@@ -47,41 +44,35 @@ open class KotlinCompilerStyling : Styling, AutoCloseable {
     @JvmField
     val staticField = style(color = Color(0xc77dbb), italic = true)
 
-    @OptIn(KaExperimentalApi::class)
+    @OptIn(KtExperimentalApi::class)
     override fun apply(document: StyledDocument, range: IntRange) {
         document.setCharacterAttributes(range.first, range.last - range.first + 1, style(), true)
         val file = factory.createFile(document.getText(range.first, range.last - range.first + 1))
-        analyze(file) {
-            file.accept(object : KtTreeVisitorVoid() {
-                override fun visitKtElement(element: KtElement) {
-                    element.allChildren.forEach { element ->
-                        val style = when (element.elementType) {
-                            in KtTokens.KEYWORDS -> keywords
-                            in KtTokens.SOFT_KEYWORDS -> keywords
-                            in KtTokens.COMMENTS -> comments
-                            KtTokens.INTEGER_LITERAL, KtTokens.FLOAT_LITERAL -> numbers
-                            in KtTokens.STRINGS -> strings
-                            KtStubElementTypes.ANNOTATION_ENTRY -> annotations
-                            KtStubElementTypes.REFERENCE_EXPRESSION -> {
-                                val symbol = element.resolveSuccessfulSymbol()
-                                instanceField
-                            }
-                            else -> null
-                        }
-
-                        style?.let {
-                            document.setCharacterAttributes(
-                                element.textRange.startOffset + range.first,
-                                element.textRange.length + range.first,
-                                style,
-                                true
-                            )
-                        }
+        file.accept(object : KtTreeVisitorVoid() {
+            override fun visitKtElement(element: KtElement) {
+                element.allChildren.forEach { element ->
+                    val style = when (element.elementType) {
+                        in KtTokens.KEYWORDS -> keywords
+                        in KtTokens.SOFT_KEYWORDS -> keywords
+                        in KtTokens.COMMENTS -> comments
+                        KtTokens.INTEGER_LITERAL, KtTokens.FLOAT_LITERAL -> numbers
+                        in KtTokens.STRINGS -> strings
+                        KtStubElementTypes.ANNOTATION_ENTRY -> annotations
+                        else -> null
                     }
-                    super.visitKtElement(element)
+
+                    style?.let {
+                        document.setCharacterAttributes(
+                            element.textRange.startOffset + range.first,
+                            element.textRange.length + range.first,
+                            style,
+                            true
+                        )
+                    }
                 }
-            })
-        }
+                super.visitKtElement(element)
+            }
+        })
     }
 
     override fun close() {
