@@ -2,6 +2,7 @@ package net.typho.aga_editor.window.editor.styling
 
 import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiElement
+import com.intellij.psi.TokenType.ERROR_ELEMENT
 import com.intellij.psi.util.elementType
 import org.jetbrains.kotlin.CoreEnvironmentDeprecation
 import org.jetbrains.kotlin.cli.create
@@ -42,9 +43,13 @@ open class KotlinCompilerStyling : Styling, AutoCloseable {
     @JvmField
     var annotations = style(color = Color(0xD6BC60))
     @JvmField
+    var methodDef = style(color = Color(0x5C91C9))
+    @JvmField
     var instanceField = style(color = Color(0xC474DB))
     @JvmField
     var staticField = style(color = Color(0xC474DB), italic = true)
+    @JvmField
+    var error = style(color = Color(0xE23431), underline = true)
     @JvmField
     val brackets = mutableListOf(
         style(color = Color(0xFFDA60)),
@@ -92,6 +97,19 @@ open class KotlinCompilerStyling : Styling, AutoCloseable {
                         element.textRange.startOffset + range.first,
                         element.textRange.length + range.first,
                         style,
+                        true
+                    )
+                }
+                super.visitElement(element)
+            }
+        })
+        file.accept(object : KtTreeVisitorVoid() {
+            override fun visitElement(element: PsiElement) {
+                if (element.elementType == ERROR_ELEMENT) {
+                    document.setCharacterAttributes(
+                        element.textRange.startOffset + range.first,
+                        element.textRange.length.coerceAtLeast(1) + range.first,
+                        error,
                         true
                     )
                 }
