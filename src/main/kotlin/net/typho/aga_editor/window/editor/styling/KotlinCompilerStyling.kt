@@ -5,6 +5,8 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.TokenType.ERROR_ELEMENT
 import com.intellij.psi.util.elementType
 import org.jetbrains.kotlin.CoreEnvironmentDeprecation
+import org.jetbrains.kotlin.KtNodeTypes.FUN
+import org.jetbrains.kotlin.KtNodeTypes.PROPERTY
 import org.jetbrains.kotlin.cli.create
 import org.jetbrains.kotlin.cli.jvm.compiler.EnvironmentConfigFiles
 import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
@@ -43,11 +45,11 @@ open class KotlinCompilerStyling : Styling, AutoCloseable {
     @JvmField
     var annotations = style(color = Color(0xD6BC60))
     @JvmField
-    var methodDef = style(color = Color(0x5C91C9))
+    var methodDef = style(color = Color(0x58A6F4))
     @JvmField
-    var instanceField = style(color = Color(0xC474DB))
+    var instanceField = style(color = Color(0xCF8EE5))
     @JvmField
-    var staticField = style(color = Color(0xC474DB), italic = true)
+    var staticField = style(color = Color(0xCF8EE5), italic = true)
     @JvmField
     var error = style(color = Color(0xE23431), underline = true)
     @JvmField
@@ -88,6 +90,12 @@ open class KotlinCompilerStyling : Styling, AutoCloseable {
 
                     LT -> brackets.getOrNull((angleDepth++) % brackets.size)
                     GT -> brackets.getOrNull((--angleDepth) % brackets.size)
+
+                    IDENTIFIER -> when (element.parent?.elementType) {
+                        FUN -> methodDef
+                        PROPERTY -> instanceField
+                        else -> null
+                    }
 
                     else -> null
                 }

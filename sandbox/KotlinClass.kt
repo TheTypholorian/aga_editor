@@ -6,6 +6,10 @@ class KotlinClass {
 		println(field)
 		
 		"this is a string"
+		
+		if (field) {
+			println()
+		}
 	}
 
 	companion object Companion {
