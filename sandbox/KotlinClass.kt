@@ -14,6 +14,9 @@ class KotlinClass {
 
 	companion object Companion {
 		@JvmStatic
+		val STATIC_FIELD = 200
+	
+		@JvmStatic
 		fun main(args: Array<String>) {
 			println(123) // this is a comment
 
@@ -21,7 +24,7 @@ class KotlinClass {
 				println(args[0])
 			}
 
-			rainbowBracketsTest(((((((())))))))
+			rainbowBracketsTest(((((((((())))))))))
 		}
 	}
 }

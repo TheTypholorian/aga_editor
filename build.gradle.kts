@@ -1,24 +1,20 @@
 plugins {
-    kotlin("jvm") version "2.4.21"
+    kotlin("jvm") version "2.5.0-Beta2"
 }
 
 group = "net.typho"
-version = "1.0-SNAPSHOT"
+version = "1.0.0"
 
 repositories {
     mavenCentral()
-    maven("https://packages.jetbrains.team/maven/p/ij/intellij-dependencies/")
 }
 
 dependencies {
     implementation("com.formdev:flatlaf:3.8")
-    implementation(kotlin("compiler"))
+    implementation(kotlin("analysis-api-standalone-surface"))
+    implementation(kotlin("analysis-api-standalone-implementation"))
 }
 
 kotlin {
     jvmToolchain(21)
-
-    compilerOptions {
-        freeCompilerArgs.add("-Xcontext-parameters")
-    }
 }

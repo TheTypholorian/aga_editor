@@ -1,38 +1,43 @@
 package net.typho.aga_editor.window.editor.styling
 
-import com.intellij.openapi.util.Disposer
 import com.intellij.psi.PsiElement
 import com.intellij.psi.TokenType.ERROR_ELEMENT
 import com.intellij.psi.util.elementType
-import org.jetbrains.kotlin.CoreEnvironmentDeprecation
-import org.jetbrains.kotlin.KtNodeTypes.FUN
-import org.jetbrains.kotlin.KtNodeTypes.PROPERTY
-import org.jetbrains.kotlin.cli.create
-import org.jetbrains.kotlin.cli.jvm.compiler.EnvironmentConfigFiles
-import org.jetbrains.kotlin.cli.jvm.compiler.KotlinCoreEnvironment
-import org.jetbrains.kotlin.config.CompilerConfiguration
+import org.jetbrains.kotlin.KtNodeTypes.*
+import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
+import org.jetbrains.kotlin.analysis.api.resolution.resolveSuccessfulSymbol
+import org.jetbrains.kotlin.analysis.api.session.analyze
+import org.jetbrains.kotlin.analysis.api.standalone.buildStandaloneAnalysisAPISession
+import org.jetbrains.kotlin.analysis.api.symbols.KaKotlinPropertySymbol
+import org.jetbrains.kotlin.analysis.project.structure.builder.buildKtSourceModule
+import org.jetbrains.kotlin.config.JvmTarget
 import org.jetbrains.kotlin.lexer.KtTokens.*
-import org.jetbrains.kotlin.psi.KtExperimentalApi
+import org.jetbrains.kotlin.platform.jvm.JvmPlatforms
+import org.jetbrains.kotlin.psi.KtNameReferenceExpression
 import org.jetbrains.kotlin.psi.KtPsiFactory
 import org.jetbrains.kotlin.psi.KtTreeVisitorVoid
-import org.jetbrains.kotlin.psi.stubs.elements.KtStubElementTypes.ANNOTATION_ENTRY
 import java.awt.Color
 import javax.swing.text.StyledDocument
+import kotlin.io.path.Path
 
-open class KotlinCompilerStyling : Styling, AutoCloseable {
+open class KotlinCompilerStyling : Styling {
     @JvmField
-    val disposable = Disposer.newDisposable()
+    val session = buildStandaloneAnalysisAPISession {
+        buildKtModuleProvider {
+            val platform = JvmPlatforms.jvmPlatformByTargetVersion(JvmTarget.DEFAULT)
+            this.platform = platform
+
+            addModule(
+                buildKtSourceModule {
+                    moduleName = "editor"
+                    this.platform = platform
+                    addSourceRoot(Path("sandbox")) // TODO
+                }
+            )
+        }
+    }
     @JvmField
-    val config = CompilerConfiguration.create()
-    @OptIn(CoreEnvironmentDeprecation::class)
-    @JvmField
-    val environment = KotlinCoreEnvironment.createForProduction(
-        disposable,
-        config,
-        EnvironmentConfigFiles.JVM_CONFIG_FILES
-    )
-    @JvmField
-    val factory = KtPsiFactory(environment.project, false)
+    val factory = KtPsiFactory(session.project, false)
 
     @JvmField
     var keywords = style(color = Color(0xE28C4F))
@@ -47,9 +52,7 @@ open class KotlinCompilerStyling : Styling, AutoCloseable {
     @JvmField
     var methodDef = style(color = Color(0x58A6F4))
     @JvmField
-    var instanceField = style(color = Color(0xCF8EE5))
-    @JvmField
-    var staticField = style(color = Color(0xCF8EE5), italic = true)
+    var property = style(color = Color(0xCF8EE5))
     @JvmField
     var error = style(color = Color(0xE23431), underline = true)
     @JvmField
@@ -60,74 +63,81 @@ open class KotlinCompilerStyling : Styling, AutoCloseable {
         style(color = Color(0x726EE5))
     )
 
-    @OptIn(KtExperimentalApi::class)
+    @OptIn(KaExperimentalApi::class)
     override fun apply(document: StyledDocument, range: IntRange) {
         document.setCharacterAttributes(range.first, range.last - range.first + 1, style(), true)
         val file = factory.createFile(document.getText(range.first, range.last - range.first + 1))
-        file.accept(object : KtTreeVisitorVoid() {
-            var bracketDepth = 0
-            var braceDepth = 0
-            var parDepth = 0
-            var angleDepth = 0
 
-            override fun visitElement(element: PsiElement) {
-                val style = when (element.elementType) {
-                    in KEYWORDS -> keywords
-                    in SOFT_KEYWORDS -> keywords
-                    in COMMENTS -> comments
-                    INTEGER_LITERAL, FLOAT_LITERAL -> numbers
-                    OPEN_QUOTE, CLOSING_QUOTE, in STRINGS -> strings
-                    ANNOTATION_ENTRY -> annotations
+        analyze(file) {
+            file.accept(object : KtTreeVisitorVoid() {
+                var bracketDepth = 0
+                var braceDepth = 0
+                var parDepth = 0
+                var angleDepth = 0
 
-                    LBRACKET -> brackets.getOrNull((bracketDepth++) % brackets.size)
-                    RBRACKET -> brackets.getOrNull((--bracketDepth) % brackets.size)
+                override fun visitElement(element: PsiElement) {
+                    val style = when (element.elementType) {
+                        in KEYWORDS -> keywords
+                        in SOFT_KEYWORDS -> keywords
+                        in COMMENTS -> comments
+                        INTEGER_LITERAL, FLOAT_LITERAL -> numbers
+                        OPEN_QUOTE, CLOSING_QUOTE, in STRINGS -> strings
+                        ANNOTATION_ENTRY -> annotations
 
-                    LBRACE -> brackets.getOrNull((braceDepth++) % brackets.size)
-                    RBRACE -> brackets.getOrNull((--braceDepth) % brackets.size)
+                        IDENTIFIER -> when (element.parent?.elementType) {
+                            FUN -> methodDef
+                            PROPERTY -> property
+                            else -> null
+                        }
+                        REFERENCE_EXPRESSION -> {
+                            (element as KtNameReferenceExpression).resolveSuccessfulSymbol()?.let { symbol ->
+                                when (symbol) {
+                                    is KaKotlinPropertySymbol -> property
+                                    else -> null
+                                }
+                            }
+                        }
 
-                    LPAR -> brackets.getOrNull((parDepth++) % brackets.size)
-                    RPAR -> brackets.getOrNull((--parDepth) % brackets.size)
+                        LBRACKET -> brackets.getOrNull((bracketDepth++) % brackets.size)
+                        RBRACKET -> brackets.getOrNull((--bracketDepth) % brackets.size)
 
-                    LT -> brackets.getOrNull((angleDepth++) % brackets.size)
-                    GT -> brackets.getOrNull((--angleDepth) % brackets.size)
+                        LBRACE -> brackets.getOrNull((braceDepth++) % brackets.size)
+                        RBRACE -> brackets.getOrNull((--braceDepth) % brackets.size)
 
-                    IDENTIFIER -> when (element.parent?.elementType) {
-                        FUN -> methodDef
-                        PROPERTY -> instanceField
+                        LPAR -> brackets.getOrNull((parDepth++) % brackets.size)
+                        RPAR -> brackets.getOrNull((--parDepth) % brackets.size)
+
+                        LT -> brackets.getOrNull((angleDepth++) % brackets.size)
+                        GT -> brackets.getOrNull((--angleDepth) % brackets.size)
+
                         else -> null
                     }
 
-                    else -> null
+                    style?.let {
+                        document.setCharacterAttributes(
+                            element.textRange.startOffset + range.first,
+                            element.textRange.length + range.first,
+                            style,
+                            true
+                        )
+                    }
+                    super.visitElement(element)
                 }
-
-                style?.let {
-                    document.setCharacterAttributes(
-                        element.textRange.startOffset + range.first,
-                        element.textRange.length + range.first,
-                        style,
-                        true
-                    )
+            })
+            file.accept(object : KtTreeVisitorVoid() {
+                override fun visitElement(element: PsiElement) {
+                    if (element.elementType == ERROR_ELEMENT) {
+                        document.setCharacterAttributes(
+                            element.textRange.startOffset + range.first,
+                            element.textRange.length.coerceAtLeast(1) + range.first,
+                            error,
+                            true
+                        )
+                    }
+                    super.visitElement(element)
                 }
-                super.visitElement(element)
-            }
-        })
-        file.accept(object : KtTreeVisitorVoid() {
-            override fun visitElement(element: PsiElement) {
-                if (element.elementType == ERROR_ELEMENT) {
-                    document.setCharacterAttributes(
-                        element.textRange.startOffset + range.first,
-                        element.textRange.length.coerceAtLeast(1) + range.first,
-                        error,
-                        true
-                    )
-                }
-                super.visitElement(element)
-            }
-        })
-    }
-
-    override fun close() {
-        Disposer.dispose(disposable)
+            })
+        }
     }
 
     companion object Default : KotlinCompilerStyling()
