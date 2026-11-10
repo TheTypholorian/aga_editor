@@ -26,6 +26,7 @@ object AgaEditor {
         UIManager.put("TitlePane.iconSize", Dimension(24, 24))
         UIManager.put("TitlePane.centerTitle", true)
         UIManager.put("defaultFont", UIManager.getFont("monospaced.font"))
+        UIManager.put("FlatLaf.experimental.tree.widePathForLocation", true)
 
         window.title = "Aga Editor"
         window.iconImages = listOf(150, 100, 75, 50, 30).map { res -> readImage("icons/aga_${res}x${res}.png") }

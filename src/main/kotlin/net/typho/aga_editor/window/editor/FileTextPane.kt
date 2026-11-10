@@ -53,9 +53,7 @@ open class FileTextPane(
             val edit = it.edit
 
             if (edit is AbstractDocument.DefaultDocumentEvent) {
-                if (edit.type == DocumentEvent.EventType.INSERT ||
-                    edit.type == DocumentEvent.EventType.REMOVE
-                ) {
+                if (edit.type == DocumentEvent.EventType.INSERT || edit.type == DocumentEvent.EventType.REMOVE) {
                     undoManager.addEdit(edit)
                 }
             }
