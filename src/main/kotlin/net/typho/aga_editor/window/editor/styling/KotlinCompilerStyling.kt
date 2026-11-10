@@ -3,12 +3,17 @@ package net.typho.aga_editor.window.editor.styling
 import com.intellij.psi.PsiElement
 import com.intellij.psi.TokenType.ERROR_ELEMENT
 import com.intellij.psi.util.elementType
+import net.typho.maven_util.ArtifactCoords
+import net.typho.maven_util.MavenUtil
 import org.jetbrains.kotlin.KtNodeTypes.*
 import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
+import org.jetbrains.kotlin.analysis.api.projectStructure.KaModule
+import org.jetbrains.kotlin.analysis.api.projectStructure.contextModule
 import org.jetbrains.kotlin.analysis.api.resolution.resolveSuccessfulSymbol
 import org.jetbrains.kotlin.analysis.api.session.analyze
 import org.jetbrains.kotlin.analysis.api.standalone.buildStandaloneAnalysisAPISession
 import org.jetbrains.kotlin.analysis.api.symbols.KaKotlinPropertySymbol
+import org.jetbrains.kotlin.analysis.project.structure.builder.buildKtLibraryModule
 import org.jetbrains.kotlin.analysis.project.structure.builder.buildKtSourceModule
 import org.jetbrains.kotlin.config.JvmTarget
 import org.jetbrains.kotlin.lexer.KtTokens.*
@@ -17,10 +22,13 @@ import org.jetbrains.kotlin.psi.KtNameReferenceExpression
 import org.jetbrains.kotlin.psi.KtPsiFactory
 import org.jetbrains.kotlin.psi.KtTreeVisitorVoid
 import java.awt.Color
+import java.nio.file.Path
 import javax.swing.text.StyledDocument
 import kotlin.io.path.Path
+import kotlin.io.path.name
 
 open class KotlinCompilerStyling : Styling {
+    lateinit var module: KaModule
     @JvmField
     val session = buildStandaloneAnalysisAPISession {
         buildKtModuleProvider {
@@ -29,10 +37,20 @@ open class KotlinCompilerStyling : Styling {
 
             addModule(
                 buildKtSourceModule {
-                    moduleName = "editor"
+                    moduleName = "sandbox"
                     this.platform = platform
                     addSourceRoot(Path("sandbox")) // TODO
-                }
+
+                    addRegularDependency(buildKtLibraryModule {
+                        libraryName = "kotlin-stdlib"
+                        this.platform = platform
+                        addBinaryRoot(MavenUtil.cachedLookup(
+                            ArtifactCoords("org.jetbrains.kotlin", "kotlin-stdlib", "2.4.21"),
+                            Path("sandbox", "maven_cache"),
+                            listOf(MavenUtil.MAVEN_CENTRAL)
+                        ).orThrow().artifact)
+                    })
+                }.also { module = it }
             )
         }
     }
@@ -64,10 +82,10 @@ open class KotlinCompilerStyling : Styling {
     )
 
     @OptIn(KaExperimentalApi::class)
-    override fun apply(document: StyledDocument, range: IntRange) {
+    override fun apply(file: Path, document: StyledDocument, range: IntRange) {
         document.setCharacterAttributes(range.first, range.last - range.first + 1, style(), true)
-        val file = factory.createFile(document.getText(range.first, range.last - range.first + 1))
-
+        val file = factory.createFile(file.name, document.getText(range.first, range.last - range.first + 1))
+        file.contextModule = module
         analyze(file) {
             file.accept(object : KtTreeVisitorVoid() {
                 var bracketDepth = 0
@@ -90,7 +108,11 @@ open class KotlinCompilerStyling : Styling {
                             else -> null
                         }
                         REFERENCE_EXPRESSION -> {
-                            (element as KtNameReferenceExpression).resolveSuccessfulSymbol()?.let { symbol ->
+                            val symbol = (element as KtNameReferenceExpression).resolveSuccessfulSymbol()
+
+                            if (symbol == null) {
+                                error
+                            } else {
                                 when (symbol) {
                                     is KaKotlinPropertySymbol -> property
                                     else -> null

@@ -163,7 +163,7 @@ open class FileTextPane(
             },
             false
         )
-        styling?.apply(editor.styledDocument)
+        styling?.apply(file, editor.styledDocument)
     }
 
     fun save() {

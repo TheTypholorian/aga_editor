@@ -1,6 +1,7 @@
 package net.typho.aga_editor.window.editor.styling
 
 import java.awt.Color
+import java.nio.file.Path
 import javax.swing.text.SimpleAttributeSet
 import javax.swing.text.StyleConstants
 import javax.swing.text.StyledDocument
@@ -27,5 +28,5 @@ interface Styling {
         StyleConstants.setStrikeThrough(attributes, strikethrough)
     }
 
-    fun apply(document: StyledDocument, range: IntRange = 0 until document.length)
+    fun apply(file: Path, document: StyledDocument, range: IntRange = 0 until document.length)
 }
