@@ -4,6 +4,8 @@ class KotlinClass {
 
 	fun test() {
 		println(field)
+		
+		"this is a string"
 	}
 
 	companion object Companion {
@@ -14,6 +16,8 @@ class KotlinClass {
 			if (true) {
 				println(args[0])
 			}
+
+			rainbowBracketsTest(((((((())))))))
 		}
 	}
 }
