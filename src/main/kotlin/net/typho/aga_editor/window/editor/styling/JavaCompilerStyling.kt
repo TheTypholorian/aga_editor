@@ -22,8 +22,8 @@ open class JavaCompilerStyling : Styling {
         }
 
         document.setCharacterAttributes(
-            token.range.first,
-            token.range.last - token.range.first,
+            token.text.range.first,
+            token.text.range.last - token.text.range.first,
             style,
             false
         )
