@@ -16,7 +16,7 @@ open class JavaCompilerStyling : Styling {
             document.setCharacterAttributes(0, document.length, Styling.clear, true)
             lexer.process(text)
         } else {
-            val update = lexer.update(change) ?: return
+            val update = lexer.update(change)// ?: return
             document.setCharacterAttributes(0, document.length, Styling.clear, true)
             lexer.tokens
             //document.setCharacterAttributes(update.range.first, update.range.last - update.range.first, Styling.clear, true)
