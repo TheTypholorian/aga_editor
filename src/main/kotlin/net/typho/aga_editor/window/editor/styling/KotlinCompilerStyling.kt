@@ -36,7 +36,7 @@ object KotlinCompilerStyling : Styling {
     val factory = KtPsiFactory(session.project, false)
      */
 
-    override fun apply(file: Path, document: StyledDocument, change: DocumentEvent?) {
+    override fun apply(file: Path, document: StyledDocument, change: DocumentEvent?): Runnable {
         document.setCharacterAttributes(0, document.length, Styling.clear, true)
         val text = document.getText(0, document.length)
 
@@ -117,5 +117,7 @@ object KotlinCompilerStyling : Styling {
             })
         }
          */
+
+        return { } // TODO
     }
 }

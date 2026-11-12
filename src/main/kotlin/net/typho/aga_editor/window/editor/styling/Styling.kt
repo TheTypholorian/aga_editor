@@ -59,5 +59,5 @@ interface Styling {
         file: Path,
         document: StyledDocument,
         change: DocumentEvent? = null
-    )
+    ): Runnable
 }

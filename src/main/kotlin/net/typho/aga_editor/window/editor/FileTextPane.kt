@@ -131,18 +131,18 @@ open class FileTextPane(
         editor.styledDocument.addDocumentListener(object : DocumentListener {
             override fun insertUpdate(e: DocumentEvent) {
                 saved = false
-                SwingUtilities.invokeLater { applyStyle(e) }
+                applyStyle(e)?.let { SwingUtilities.invokeLater { it.run() } }
             }
 
             override fun removeUpdate(e: DocumentEvent) {
                 saved = false
-                SwingUtilities.invokeLater { applyStyle(e) }
+                applyStyle(e)?.let { SwingUtilities.invokeLater { it.run() } }
             }
 
             override fun changedUpdate(e: DocumentEvent) {
             }
         })
-        applyStyle()
+        applyStyle()?.run()
     }
 
     override fun addNotify() {
@@ -162,12 +162,14 @@ open class FileTextPane(
         }
     }
 
-    open fun applyStyle(change: DocumentEvent? = null) {
+    open fun applyStyle(change: DocumentEvent? = null): Runnable? {
+        styling ?: return null
+
         val start = System.currentTimeMillis()
+        val task = styling.apply(file, editor.styledDocument, change)
+        println("${System.currentTimeMillis() - start} ms calculate")
 
-        styling?.apply(file, editor.styledDocument, change)
-
-        println("${System.currentTimeMillis() - start} ms update")
+        return task
     }
 
     fun save() {
