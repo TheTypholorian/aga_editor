@@ -16,7 +16,7 @@ object JavaCompilerStyling : Styling {
                 is JavaCompilerPrototype2.Identifier -> Styling.methodDef // TODO
                 is JavaCompilerPrototype2.KeywordToken -> Styling.keywords
                 is JavaCompilerPrototype2.Number -> Styling.numbers
-                is JavaCompilerPrototype2.Special -> Styling.brackets[0]
+                is JavaCompilerPrototype2.Punctuation -> Styling.brackets[0]
                 is JavaCompilerPrototype2.Text -> Styling.strings
             }
 
