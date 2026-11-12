@@ -73,6 +73,15 @@ open class FileTextPane(
             }
         })
 
+        editor.styledDocument.setParagraphAttributes(
+            0,
+            editor.styledDocument.length,
+            SimpleAttributeSet().also {
+                StyleConstants.setTabSet(it, BetterTabSet(editor, 4f))
+                StyleConstants.setFontSize(it, 14)
+            },
+            false
+        )
         (editor.document as AbstractDocument).documentFilter = object : DocumentFilter() {
             override fun remove(
                 fb: FilterBypass,
@@ -122,12 +131,12 @@ open class FileTextPane(
         editor.styledDocument.addDocumentListener(object : DocumentListener {
             override fun insertUpdate(e: DocumentEvent) {
                 saved = false
-                SwingUtilities.invokeLater { applyStyle() }
+                SwingUtilities.invokeLater { applyStyle(e) }
             }
 
             override fun removeUpdate(e: DocumentEvent) {
                 saved = false
-                SwingUtilities.invokeLater { applyStyle() }
+                SwingUtilities.invokeLater { applyStyle(e) }
             }
 
             override fun changedUpdate(e: DocumentEvent) {
@@ -153,17 +162,12 @@ open class FileTextPane(
         }
     }
 
-    open fun applyStyle() {
-        editor.styledDocument.setParagraphAttributes(
-            0,
-            editor.styledDocument.length,
-            SimpleAttributeSet().also {
-                StyleConstants.setTabSet(it, BetterTabSet(editor, 4f))
-                StyleConstants.setFontSize(it, 14)
-            },
-            false
-        )
-        styling?.apply(file, editor.styledDocument)
+    open fun applyStyle(change: DocumentEvent? = null) {
+        val start = System.currentTimeMillis()
+
+        styling?.apply(file, editor.styledDocument, change)
+
+        println("${System.currentTimeMillis() - start} ms update")
     }
 
     fun save() {

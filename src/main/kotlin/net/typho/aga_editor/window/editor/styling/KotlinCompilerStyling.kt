@@ -1,6 +1,7 @@
 package net.typho.aga_editor.window.editor.styling
 
 import java.nio.file.Path
+import javax.swing.event.DocumentEvent
 import javax.swing.text.StyledDocument
 
 object KotlinCompilerStyling : Styling {
@@ -35,9 +36,9 @@ object KotlinCompilerStyling : Styling {
     val factory = KtPsiFactory(session.project, false)
      */
 
-    override fun apply(file: Path, document: StyledDocument, range: IntRange) {
-        document.setCharacterAttributes(range.first, range.last - range.first + 1, Styling.style(), true)
-        val text = document.getText(range.first, range.last - range.first + 1)
+    override fun apply(file: Path, document: StyledDocument, change: DocumentEvent?) {
+        document.setCharacterAttributes(0, document.length, Styling.clear, true)
+        val text = document.getText(0, document.length)
 
         /*
         file.contextModule = module
