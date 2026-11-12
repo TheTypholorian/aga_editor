@@ -10,6 +10,7 @@ import java.awt.event.ActionEvent
 import javax.imageio.ImageIO
 import javax.swing.*
 import kotlin.io.path.Path
+import kotlin.io.path.absolute
 
 object AgaEditor {
     init {
@@ -34,7 +35,7 @@ object AgaEditor {
         window.defaultCloseOperation = JFrame.DISPOSE_ON_CLOSE
         window.setLocationRelativeTo(null)
 
-        val sandbox = Path("sandbox")
+        val sandbox = Path("sandbox").absolute()
 
         window.contentPane.layout = BorderLayout()
 
@@ -58,6 +59,9 @@ object AgaEditor {
             }))
         })
         window.jMenuBar = menuBar
+
+        // TODO
+        editor.open(sandbox.parent.parent.resolve("compilation_util").resolve("tests").resolve("JavaTest.java"))
 
         window.isVisible = true
         window.toFront()

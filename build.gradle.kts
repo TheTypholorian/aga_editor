@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "2.5.0-Beta2"
+    kotlin("jvm") version "2.4.21"
 }
 
 group = "net.typho"
@@ -15,6 +15,7 @@ repositories {
 dependencies {
     implementation("com.formdev:flatlaf:3.8")
     implementation("net.typho:maven_util:1.5.1")
+    implementation(project(":compilation_util"))
 }
 
 kotlin {

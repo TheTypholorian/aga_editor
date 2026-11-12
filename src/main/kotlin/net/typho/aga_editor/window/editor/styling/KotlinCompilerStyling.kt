@@ -1,32 +1,10 @@
 package net.typho.aga_editor.window.editor.styling
 
-import com.intellij.psi.PsiElement
-import com.intellij.psi.TokenType.ERROR_ELEMENT
-import com.intellij.psi.util.elementType
-import net.typho.maven_util.ArtifactCoords
-import net.typho.maven_util.MavenUtil
-import org.jetbrains.kotlin.KtNodeTypes.*
-import org.jetbrains.kotlin.analysis.api.KaExperimentalApi
-import org.jetbrains.kotlin.analysis.api.projectStructure.KaModule
-import org.jetbrains.kotlin.analysis.api.projectStructure.contextModule
-import org.jetbrains.kotlin.analysis.api.resolution.resolveSuccessfulSymbol
-import org.jetbrains.kotlin.analysis.api.session.analyze
-import org.jetbrains.kotlin.analysis.api.standalone.buildStandaloneAnalysisAPISession
-import org.jetbrains.kotlin.analysis.api.symbols.KaKotlinPropertySymbol
-import org.jetbrains.kotlin.analysis.project.structure.builder.buildKtLibraryModule
-import org.jetbrains.kotlin.analysis.project.structure.builder.buildKtSourceModule
-import org.jetbrains.kotlin.config.JvmTarget
-import org.jetbrains.kotlin.lexer.KtTokens.*
-import org.jetbrains.kotlin.platform.jvm.JvmPlatforms
-import org.jetbrains.kotlin.psi.KtNameReferenceExpression
-import org.jetbrains.kotlin.psi.KtPsiFactory
-import org.jetbrains.kotlin.psi.KtTreeVisitorVoid
 import java.nio.file.Path
 import javax.swing.text.StyledDocument
-import kotlin.io.path.Path
-import kotlin.io.path.name
 
 object KotlinCompilerStyling : Styling {
+    /*
     private var module: KaModule
     @JvmField
     val session = buildStandaloneAnalysisAPISession {
@@ -55,11 +33,13 @@ object KotlinCompilerStyling : Styling {
     }
     @JvmField
     val factory = KtPsiFactory(session.project, false)
+     */
 
-    @OptIn(KaExperimentalApi::class)
     override fun apply(file: Path, document: StyledDocument, range: IntRange) {
         document.setCharacterAttributes(range.first, range.last - range.first + 1, Styling.style(), true)
-        val file = factory.createFile(file.name, document.getText(range.first, range.last - range.first + 1))
+        val text = document.getText(range.first, range.last - range.first + 1)
+
+        /*
         file.contextModule = module
         analyze(file) {
             file.accept(object : KtTreeVisitorVoid() {
@@ -73,7 +53,7 @@ object KotlinCompilerStyling : Styling {
                         in KEYWORDS -> Styling.keywords
                         in SOFT_KEYWORDS -> Styling.keywords
                         in COMMENTS -> Styling.comments
-                        INTEGER_LITERAL, FLOAT_LITERAL -> Styling.numbers
+                        INTEGER_LITERAL, Tree.Kind.FLOAT_LITERAL -> Styling.numbers
                         OPEN_QUOTE, CLOSING_QUOTE, in STRINGS -> Styling.strings
                         ANNOTATION_ENTRY -> Styling.annotations
 
@@ -135,5 +115,6 @@ object KotlinCompilerStyling : Styling {
                 }
             })
         }
+         */
     }
 }

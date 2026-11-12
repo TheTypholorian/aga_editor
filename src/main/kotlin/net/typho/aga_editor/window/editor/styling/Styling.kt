@@ -10,7 +10,8 @@ interface Styling {
     companion object {
         @JvmField // TODO
         val byFileExtension = mutableMapOf<String, Styling>(
-            "kt" to KotlinCompilerStyling
+            "java" to JavaCompilerStyling,
+            "kt" to KotlinCompilerStyling,
         )
         @JvmField
         val keywords = style(color = Color(0xE28C4F))
