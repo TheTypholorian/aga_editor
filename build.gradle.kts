@@ -14,7 +14,7 @@ repositories {
 
 dependencies {
     implementation("com.formdev:flatlaf:3.8")
-    implementation("net.typho:maven_util:1.5.1")
+    implementation("net.typho:maven_util:1.5.2")
     implementation(project(":compilation_util"))
 }
 
