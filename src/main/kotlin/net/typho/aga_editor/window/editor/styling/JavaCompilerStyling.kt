@@ -2,149 +2,79 @@ package net.typho.aga_editor.window.editor.styling
 
 import net.typho.compilation_util.lexer.JavaLexer
 import net.typho.compilation_util.lexer.LexerToken
+import net.typho.compilation_util.parser.JavaParser
+import net.typho.compilation_util.parser.ParserNode
 import java.awt.Color
 import java.awt.Font
-import java.nio.file.Path
-import javax.swing.event.DocumentEvent
+import java.io.InputStream
+import java.io.OutputStream
+import java.io.Reader
+import java.io.Writer
+import javax.swing.Action
+import javax.swing.JComponent
 import javax.swing.event.DocumentListener
 import javax.swing.event.UndoableEditListener
 import javax.swing.text.AttributeSet
+import javax.swing.text.Caret
+import javax.swing.text.DefaultStyledDocument
+import javax.swing.text.Document
+import javax.swing.text.EditorKit
 import javax.swing.text.Element
+import javax.swing.text.GapContent
+import javax.swing.text.PlainDocument
 import javax.swing.text.Position
 import javax.swing.text.Segment
 import javax.swing.text.Style
-import javax.swing.text.StyledDocument
+import javax.swing.text.ViewFactory
 
-open class JavaCompilerStyling : StyledDocument {
+open class JavaCompilerStyling(
     @JvmField
-    val lexer = JavaLexer()
+    val editor: JComponent
+) : EditorKit() {
+    @JvmField
+    protected val lexer = JavaLexer()
+    @JvmField
+    protected var tokens = listOf<LexerToken>()
+    @JvmField
+    protected var parsed: ParserNode.File? = null
 
-    override fun addStyle(nm: String?, parent: Style?): Style? {
-        TODO("Not yet implemented")
+    /*
+    protected fun reload() {
+        val tokens = //lexer.process(getText(0, length))
+        val parsed = JavaParser.parse(tokens)
+
+        // TODO
+
+        this.tokens = tokens
+        this.parsed = parsed
+    }
+     */
+
+    override fun getContentType() = "text/x-java-source"
+
+    override fun getViewFactory() = null
+
+    override fun getActions() = arrayOf<Action>() // TODO
+
+    override fun createCaret() = null
+
+    override fun createDefaultDocument() = DefaultStyledDocument()
+
+    override fun read(`in`: InputStream, doc: Document, pos: Int) {
+        read(`in`.reader(), doc, pos)
     }
 
-    override fun removeStyle(nm: String?) {
-        TODO("Not yet implemented")
+    override fun read(`in`: Reader, doc: Document, pos: Int) {
     }
 
-    override fun getStyle(nm: String?): Style? {
-        TODO("Not yet implemented")
+    override fun write(out: OutputStream, doc: Document, pos: Int, len: Int) {
+        write(out.writer(), doc, pos, len)
     }
 
-    override fun setCharacterAttributes(
-        offset: Int,
-        length: Int,
-        s: AttributeSet?,
-        replace: Boolean
-    ) {
-        TODO("Not yet implemented")
+    override fun write(out: Writer, doc: Document, pos: Int, len: Int) {
     }
 
-    override fun setParagraphAttributes(
-        offset: Int,
-        length: Int,
-        s: AttributeSet?,
-        replace: Boolean
-    ) {
-        TODO("Not yet implemented")
-    }
-
-    override fun setLogicalStyle(pos: Int, s: Style?) {
-        TODO("Not yet implemented")
-    }
-
-    override fun getLogicalStyle(p: Int): Style? {
-        TODO("Not yet implemented")
-    }
-
-    override fun getParagraphElement(pos: Int): Element? {
-        TODO("Not yet implemented")
-    }
-
-    override fun getCharacterElement(pos: Int): Element? {
-        TODO("Not yet implemented")
-    }
-
-    override fun getForeground(attr: AttributeSet?): Color? {
-        TODO("Not yet implemented")
-    }
-
-    override fun getBackground(attr: AttributeSet?): Color? {
-        TODO("Not yet implemented")
-    }
-
-    override fun getFont(attr: AttributeSet?): Font? {
-        TODO("Not yet implemented")
-    }
-
-    override fun getLength(): Int {
-        TODO("Not yet implemented")
-    }
-
-    override fun addDocumentListener(listener: DocumentListener?) {
-        TODO("Not yet implemented")
-    }
-
-    override fun removeDocumentListener(listener: DocumentListener?) {
-        TODO("Not yet implemented")
-    }
-
-    override fun addUndoableEditListener(listener: UndoableEditListener?) {
-        TODO("Not yet implemented")
-    }
-
-    override fun removeUndoableEditListener(listener: UndoableEditListener?) {
-        TODO("Not yet implemented")
-    }
-
-    override fun getProperty(key: Any?): Any? {
-        TODO("Not yet implemented")
-    }
-
-    override fun putProperty(key: Any?, value: Any?) {
-        TODO("Not yet implemented")
-    }
-
-    override fun remove(offs: Int, len: Int) {
-        TODO("Not yet implemented")
-    }
-
-    override fun insertString(offset: Int, str: String?, a: AttributeSet?) {
-        TODO("Not yet implemented")
-    }
-
-    override fun getText(offset: Int, length: Int): String? {
-        TODO("Not yet implemented")
-    }
-
-    override fun getText(offset: Int, length: Int, txt: Segment?) {
-        TODO("Not yet implemented")
-    }
-
-    override fun getStartPosition(): Position? {
-        TODO("Not yet implemented")
-    }
-
-    override fun getEndPosition(): Position? {
-        TODO("Not yet implemented")
-    }
-
-    override fun createPosition(offs: Int): Position? {
-        TODO("Not yet implemented")
-    }
-
-    override fun getRootElements(): Array<out Element?>? {
-        TODO("Not yet implemented")
-    }
-
-    override fun getDefaultRootElement(): Element? {
-        TODO("Not yet implemented")
-    }
-
-    override fun render(r: Runnable?) {
-        TODO("Not yet implemented")
-    }
-
+    /*
     open fun style(token: LexerToken, document: StyledDocument) {
         val style = when (token) {
             is LexerToken.Comment -> Styling.comments
@@ -177,4 +107,5 @@ open class JavaCompilerStyling : StyledDocument {
             println("${System.currentTimeMillis() - start} ms apply")
         }
     }
+     */
 }

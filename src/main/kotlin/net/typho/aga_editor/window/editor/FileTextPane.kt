@@ -17,8 +17,12 @@ import kotlin.io.path.*
 open class FileTextPane(
     file: Path,
     @JvmField
-    val styling: Styling? = null
-) : JScrollPane(JTextPane()) {
+    protected val styling: Styling? = null
+) : JScrollPane(object : JTextPane() {
+    override fun createDefaultEditorKit(): EditorKit {
+        return styling?.create(this) ?: super.createDefaultEditorKit()
+    }
+}) {
     var file by property(file, ::firePropertyChange)
     val editor: JTextPane
         get() = viewport.view as JTextPane
@@ -128,21 +132,6 @@ open class FileTextPane(
                 }
             }
         }
-        editor.styledDocument.addDocumentListener(object : DocumentListener {
-            override fun insertUpdate(e: DocumentEvent) {
-                saved = false
-                applyStyle(e)?.let { SwingUtilities.invokeLater { it.run() } }
-            }
-
-            override fun removeUpdate(e: DocumentEvent) {
-                saved = false
-                applyStyle(e)?.let { SwingUtilities.invokeLater { it.run() } }
-            }
-
-            override fun changedUpdate(e: DocumentEvent) {
-            }
-        })
-        applyStyle()?.run()
     }
 
     override fun addNotify() {
@@ -160,16 +149,6 @@ open class FileTextPane(
                 updateTitle()
             }
         }
-    }
-
-    open fun applyStyle(change: DocumentEvent? = null): Runnable? {
-        styling ?: return null
-
-        val start = System.currentTimeMillis()
-        val task = styling.apply(file, editor.styledDocument, change)
-        println("${System.currentTimeMillis() - start} ms calculate")
-
-        return task
     }
 
     fun save() {

@@ -2,17 +2,18 @@ package net.typho.aga_editor.window.editor.styling
 
 import java.awt.Color
 import java.nio.file.Path
+import javax.swing.JComponent
 import javax.swing.event.DocumentEvent
+import javax.swing.text.EditorKit
 import javax.swing.text.SimpleAttributeSet
 import javax.swing.text.StyleConstants
 import javax.swing.text.StyledDocument
 
-interface Styling {
+fun interface Styling {
     companion object {
         @JvmField // TODO
-        val byFileExtension = mutableMapOf<String, () -> Styling>(
-            "java" to { JavaCompilerStyling() },
-            "kt" to { KotlinCompilerStyling },
+        val byFileExtension = mutableMapOf(
+            "java" to Styling { JavaCompilerStyling(it) }
         )
         @JvmField
         val keywords = style(color = Color(0xE28C4F))
@@ -55,9 +56,5 @@ interface Styling {
         }
     }
 
-    fun apply(
-        file: Path,
-        document: StyledDocument,
-        change: DocumentEvent? = null
-    ): Runnable
+    fun create(editor: JComponent): EditorKit
 }
