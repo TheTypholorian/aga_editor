@@ -21,7 +21,7 @@ open class MultiFileEditorPane : JTabbedPane() {
         )
     }
 
-    fun open(file: Path, styling: Styling? = Styling.byFileExtension[file.extension]): FileTextPane {
+    fun open(file: Path, styling: Styling = Styling.byFileExtension[file.extension]?.invoke() ?: Styling.None): FileTextPane {
         repeat(tabCount) { i ->
             val tab = getComponentAt(i)
 

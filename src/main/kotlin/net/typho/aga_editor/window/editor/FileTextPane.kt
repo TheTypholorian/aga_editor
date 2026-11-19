@@ -7,25 +7,21 @@ import java.awt.event.ActionEvent
 import java.awt.event.InputEvent
 import java.awt.event.KeyEvent
 import java.nio.file.Path
-import javax.swing.*
-import javax.swing.event.DocumentEvent
-import javax.swing.event.DocumentListener
-import javax.swing.text.*
+import javax.swing.AbstractAction
+import javax.swing.JScrollPane
+import javax.swing.JTabbedPane
+import javax.swing.KeyStroke
 import javax.swing.undo.UndoManager
 import kotlin.io.path.*
 
 open class FileTextPane(
     file: Path,
     @JvmField
-    protected val styling: Styling? = null
-) : JScrollPane(object : JTextPane() {
-    override fun createDefaultEditorKit(): EditorKit {
-        return styling?.create(this) ?: super.createDefaultEditorKit()
-    }
-}) {
+    protected val styling: Styling = Styling.None
+) : JScrollPane(GrammaticalEditorPane(styling)) {
     var file by property(file, ::firePropertyChange)
-    val editor: JTextPane
-        get() = viewport.view as JTextPane
+    val editor: GrammaticalEditorPane
+        get() = viewport.view as GrammaticalEditorPane
     var saved by property(true, ::firePropertyChange)
     @JvmField
     val brackets = mutableMapOf(
@@ -45,7 +41,7 @@ open class FileTextPane(
             file.createFile()
         }
 
-        editor.text = file.readText()
+        editor.content.insertString(0, file.readText())
         editor.inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK), "save")
         editor.actionMap.put("save", object : AbstractAction("save") {
             override fun actionPerformed(e: ActionEvent) {
@@ -53,6 +49,7 @@ open class FileTextPane(
             }
         })
 
+        /*
         editor.document.addUndoableEditListener {
             val edit = it.edit
 
@@ -62,6 +59,7 @@ open class FileTextPane(
                 }
             }
         }
+         */
 
         editor.inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_Z, InputEvent.CTRL_DOWN_MASK), "undo")
         editor.actionMap.put("undo", object : AbstractAction("undo") {
@@ -77,6 +75,7 @@ open class FileTextPane(
             }
         })
 
+        /*
         editor.styledDocument.setParagraphAttributes(
             0,
             editor.styledDocument.length,
@@ -132,6 +131,7 @@ open class FileTextPane(
                 }
             }
         }
+         */
     }
 
     override fun addNotify() {

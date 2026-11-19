@@ -1,77 +1,147 @@
 package net.typho.aga_editor.window.editor.styling
 
 import net.typho.compilation_util.lexer.JavaLexer
+import net.typho.compilation_util.lexer.Keyword
 import net.typho.compilation_util.lexer.LexerToken
 import net.typho.compilation_util.parser.JavaParser
 import net.typho.compilation_util.parser.ParserNode
-import java.awt.Color
-import java.awt.Font
-import java.io.InputStream
-import java.io.OutputStream
-import java.io.Reader
-import java.io.Writer
-import javax.swing.Action
-import javax.swing.JComponent
-import javax.swing.event.DocumentListener
-import javax.swing.event.UndoableEditListener
-import javax.swing.text.AttributeSet
-import javax.swing.text.Caret
-import javax.swing.text.DefaultStyledDocument
-import javax.swing.text.Document
-import javax.swing.text.EditorKit
-import javax.swing.text.Element
-import javax.swing.text.GapContent
-import javax.swing.text.PlainDocument
-import javax.swing.text.Position
-import javax.swing.text.Segment
-import javax.swing.text.Style
-import javax.swing.text.ViewFactory
+import net.typho.parsing_util.StringView
+import java.text.AttributedCharacterIterator
+import java.text.AttributedString
 
-open class JavaCompilerStyling(
-    @JvmField
-    val editor: JComponent
-) : EditorKit() {
+open class JavaCompilerStyling : Styling {
     @JvmField
     protected val lexer = JavaLexer()
     @JvmField
-    protected var tokens = listOf<LexerToken>()
+    protected val tokens = mutableListOf<LexerToken>()
     @JvmField
     protected var parsed: ParserNode.File? = null
 
-    /*
-    protected fun reload() {
-        val tokens = //lexer.process(getText(0, length))
-        val parsed = JavaParser.parse(tokens)
+    override fun update(text: CharSequence, defaultAttributes: Map<AttributedCharacterIterator.Attribute, Any>): List<AttributedCharacterIterator> {
+        tokens.clear()
+        lexer.process(text, tokens)
+        parsed = JavaParser.parse(tokens)
 
-        // TODO
+        return buildList {
+            var textStart = 0
 
-        this.tokens = tokens
-        this.parsed = parsed
+            var parenthesesInc = 0
+            var bracketsInc = 0
+            var bracesInc = 0
+            var angleBracketsInc = 0
+
+            text.forEachIndexed { textEnd, ch ->
+                if (ch == '\n') { // TODO
+                    val view = StringView(text, textStart until textEnd)
+
+                    if (view.isEmpty()) {
+                        add(AttributedString("").iterator)
+                    } else {
+                        val attributed = AttributedString(view.toString(), defaultAttributes)
+
+                        fun style(range: IntRange, styling: Map<AttributedCharacterIterator.Attribute, Any?>) {
+                            // TODO optimize
+                            val min = (range.first - textStart).coerceAtLeast(0)
+                            val max = (range.last - textStart).coerceAtMost(view.length)
+
+                            if ((max - min) > 0) {
+                                attributed.addAttributes(
+                                    styling,
+                                    min,
+                                    max
+                                )
+                            }
+                        }
+
+                        fun style(anno: ParserNode.Annotation) {
+                            anno.type.path.tokens.forEach { style(it.text.range, Styling.annotations) }
+                        }
+
+                        tokens.forEach { token ->
+                            when (token) {
+                                is LexerToken.Comment -> Styling.comments
+                                is LexerToken.Error -> Styling.error
+                                is LexerToken.Keyword -> Styling.keywords
+                                is LexerToken.Number -> Styling.numbers
+                                is LexerToken.Punctuation -> when (token.char) {
+                                    '(' -> Styling.brackets[(parenthesesInc++) % Styling.brackets.size]
+                                    ')' -> Styling.brackets[((parenthesesInc - 1).coerceAtLeast(0).also { parenthesesInc = it }) % Styling.brackets.size]
+
+                                    '[' -> Styling.brackets[(bracketsInc++) % Styling.brackets.size]
+                                    ']' -> Styling.brackets[((bracketsInc - 1).coerceAtLeast(0).also { bracketsInc = it }) % Styling.brackets.size]
+
+                                    '{' -> Styling.brackets[(bracesInc++) % Styling.brackets.size]
+                                    '}' -> Styling.brackets[((bracesInc - 1).coerceAtLeast(0).also { bracesInc = it }) % Styling.brackets.size]
+
+                                    '<' -> Styling.brackets[(angleBracketsInc++) % Styling.brackets.size]
+                                    '>' -> Styling.brackets[((angleBracketsInc - 1).coerceAtLeast(0).also { angleBracketsInc = it }) % Styling.brackets.size]
+
+                                    else -> null
+                                }
+                                is LexerToken.Text -> Styling.strings
+                                else -> null
+                            }?.let { style(token.text.range, it) }
+                        }
+
+                        parsed?.let { parsed ->
+                            for (cls in parsed.classes) {
+                                cls.annotations.forEach { style(it) }
+
+                                for (attribute in cls.attributes) {
+                                    if (attribute is ParserNode.WithAnnotations) {
+                                        attribute.annotations.forEach { style(it) }
+                                    }
+
+                                    when (attribute) {
+                                        is ParserNode.Field -> {
+                                            style(
+                                                attribute.name.text.range,
+                                                if (attribute.modifiers.any { it.type == Keyword.STATIC }) Styling.staticProperty else Styling.instanceProperty
+                                            )
+                                        }
+                                        is ParserNode.Method -> {
+                                            style(attribute.name.text.range, Styling.methodDef)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        add(attributed.iterator)
+                    }
+
+                    textStart = textEnd + 1
+                }
+            }
+        }
     }
-     */
 
-    override fun getContentType() = "text/x-java-source"
+    open class JavaTokenCharacterIterator(
+        text: CharSequence,
+        tokens: List<LexerToken>,
+        @JvmField
+        val tokenOffset: Int,
+        @JvmField
+        val defaultAttributes: Map<AttributedCharacterIterator.Attribute, Any>
+    ) : TokenCharacterIterator<LexerToken>(text, tokens) {
+        override val LexerToken.range: IntRange
+            get() = (text.range.first + tokenOffset)..(text.range.last + tokenOffset)
+        override val LexerToken.attributes: Map<AttributedCharacterIterator.Attribute, Any>
+            get() = when (this) {
+                is LexerToken.Comment -> Styling.comments
+                is LexerToken.Error -> Styling.error
+                is LexerToken.Identifier -> Styling.methodDef
+                is LexerToken.Keyword -> Styling.keywords
+                is LexerToken.Number -> Styling.numbers
+                is LexerToken.Punctuation -> Styling.brackets[0] // TODO
+                is LexerToken.Text -> Styling.strings
+            }
 
-    override fun getViewFactory() = null
+        override fun clone() = JavaTokenCharacterIterator(text, tokens.toList(), tokenOffset, defaultAttributes.toMap())
 
-    override fun getActions() = arrayOf<Action>() // TODO
-
-    override fun createCaret() = null
-
-    override fun createDefaultDocument() = DefaultStyledDocument()
-
-    override fun read(`in`: InputStream, doc: Document, pos: Int) {
-        read(`in`.reader(), doc, pos)
-    }
-
-    override fun read(`in`: Reader, doc: Document, pos: Int) {
-    }
-
-    override fun write(out: OutputStream, doc: Document, pos: Int, len: Int) {
-        write(out.writer(), doc, pos, len)
-    }
-
-    override fun write(out: Writer, doc: Document, pos: Int, len: Int) {
+        override fun toString(): String {
+            return "JavaTokenCharacterIterator($text)"
+        }
     }
 
     /*

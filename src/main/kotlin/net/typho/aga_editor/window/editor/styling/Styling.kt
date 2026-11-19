@@ -1,19 +1,16 @@
 package net.typho.aga_editor.window.editor.styling
 
+import net.typho.parsing_util.StringView
 import java.awt.Color
-import java.nio.file.Path
-import javax.swing.JComponent
-import javax.swing.event.DocumentEvent
-import javax.swing.text.EditorKit
-import javax.swing.text.SimpleAttributeSet
-import javax.swing.text.StyleConstants
-import javax.swing.text.StyledDocument
+import java.awt.Paint
+import java.awt.font.TextAttribute
+import java.text.AttributedCharacterIterator
 
 fun interface Styling {
     companion object {
         @JvmField // TODO
-        val byFileExtension = mutableMapOf(
-            "java" to Styling { JavaCompilerStyling(it) }
+        val byFileExtension = mutableMapOf<String, () -> Styling>(
+            "java" to { JavaCompilerStyling() }
         )
         @JvmField
         val keywords = style(color = Color(0xE28C4F))
@@ -28,9 +25,11 @@ fun interface Styling {
         @JvmField
         val methodDef = style(color = Color(0x58A6F4))
         @JvmField
-        val property = style(color = Color(0xCF8EE5))
+        val instanceProperty = style(color = Color(0xCF8EE5))
         @JvmField
-        val error = style(color = Color(0xE23431), underline = true)
+        val staticProperty = style(color = Color(0xCF8EE5), italic = true)
+        @JvmField
+        val error = style(color = Color(0xE23431), underline = TextAttribute.UNDERLINE_ON)
         @JvmField
         val brackets = mutableListOf(
             style(color = Color(0xFFDA60)),
@@ -38,23 +37,39 @@ fun interface Styling {
             style(color = Color(0x5F8FE2)),
             style(color = Color(0x726EE5))
         )
-        @JvmField
-        val clear = SimpleAttributeSet()
 
         fun style(
-            color: Color? = null,
-            bold: Boolean? = null,
+            color: Paint? = null,
+            bold: Float? = null,
             italic: Boolean? = null,
-            underline: Boolean? = null,
+            underline: Int? = null,
             strikethrough: Boolean? = null
-        ) = SimpleAttributeSet().also { attributes ->
-            color?.let { StyleConstants.setForeground(attributes, it) }
-            bold?.let { StyleConstants.setBold(attributes, it) }
-            italic?.let { StyleConstants.setItalic(attributes, it) }
-            underline?.let { StyleConstants.setUnderline(attributes, it) }
-            strikethrough?.let { StyleConstants.setStrikeThrough(attributes, it) }
+        ) = buildMap<AttributedCharacterIterator.Attribute, Any> {
+            color?.let { put(TextAttribute.FOREGROUND, it) }
+            bold?.let { put(TextAttribute.WEIGHT, it) }
+            italic?.let { put(TextAttribute.POSTURE, if (it) TextAttribute.POSTURE_OBLIQUE else TextAttribute.POSTURE_REGULAR) }
+            underline?.let { put(TextAttribute.UNDERLINE, it) }
+            strikethrough?.let { put(TextAttribute.STRIKETHROUGH, it) }
         }
     }
 
-    fun create(editor: JComponent): EditorKit
+    fun update(text: CharSequence, defaultAttributes: Map<AttributedCharacterIterator.Attribute, Any>): List<AttributedCharacterIterator>
+
+    object None : Styling {
+        override fun update(
+            text: CharSequence,
+            defaultAttributes: Map<AttributedCharacterIterator.Attribute, Any>
+        ): List<AttributedCharacterIterator> {
+            return buildList {
+                var start = 0
+
+                text.forEachIndexed { index, ch ->
+                    if (ch == '\n') {
+                        add(StaticCharacterIterator(StringView(text, start until index), defaultAttributes))
+                        start = index + 1
+                    }
+                }
+            }
+        }
+    }
 }
